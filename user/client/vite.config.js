@@ -32,14 +32,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     // Enable source maps for production debugging
     sourcemap: false,
-    // Minimize bundle size
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    // esbuild is faster and far lower memory than terser (avoids OOM on Windows)
+    minify: 'esbuild',
   },
   optimizeDeps: {
     // Pre-bundle frequently used dependencies
