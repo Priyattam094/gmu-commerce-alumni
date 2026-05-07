@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() in ['admin', 'superadmin'];
+    }
+
+    function isModerator() {
+      return isAuthenticated() && getUserRole() in ['admin', 'superadmin', 'moderator'];
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Alumni profiles
+    match /alumniProfiles/{profileId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == profileId;
+      allow update: if isOwner(profileId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Student profiles
+    match /studentProfiles/{profileId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == profileId;
+      allow update: if isOwner(profileId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Events
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isModerator();
+    }
+
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isModerator();
+    }
+
+    // Opportunities (jobs, internships)
+    match /opportunities/{opportunityId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.createdBy) || isModerator();
+    }
+
+    // Mentorship requests
+    match /mentorshipRequests/{requestId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.menteeId ||
+        request.auth.uid == resource.data.mentorId ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.menteeId ||
+        request.auth.uid == resource.data.mentorId
+      );
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.menteeId;
+    }
+
+    // Communities
+    match /communities/{communityId} {
+      allow read: if isAuthenticated();
+      allow create: if isModerator();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+
+      match /members/{memberId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated() && request.auth.uid == memberId;
+      }
+    }
+
+    // Default: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

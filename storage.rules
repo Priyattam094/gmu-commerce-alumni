@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isImageFile() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // Profile pictures
+    match /avatars/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isImageFile() && isUnder5MB();
+      allow delete: if isOwner(userId);
+    }
+
+    // Event images (admin/moderator only)
+    match /events/{eventId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isImageFile() && isUnder5MB();
+      allow delete: if isAuthenticated();
+    }
+
+    // Community assets
+    match /communities/{communityId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isImageFile() && isUnder5MB();
+    }
+
+    // Default: deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
