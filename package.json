@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm --prefix user/client ci && npm --prefix user/client run build",
+    "build": "npm --prefix user/client ci --include=dev && npm --prefix user/client run build",
     "start": "node server.js"
   },
   "dependencies": {
