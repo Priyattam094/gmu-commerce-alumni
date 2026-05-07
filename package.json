@@ -1,0 +1,16 @@
+{
+  "name": "gmu-commerce-alumni",
+  "version": "1.0.0",
+  "description": "Alumni Association, School of Commerce, GM University",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm --prefix user/client ci && npm --prefix user/client run build",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
